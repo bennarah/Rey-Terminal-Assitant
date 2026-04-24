@@ -95,4 +95,4 @@ rey/
 
 ---
 
-*In memory of Rey — good girl forever.* 🐾
+*In memory of Rey* 🐾
