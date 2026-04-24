@@ -2,6 +2,8 @@
 
 Rey is a desktop AI assistant for macOS that lives above your dock as an animated pixel art golden retriever. Click her anytime you have a terminal question and she'll answer in plain, beginner-friendly English.
 
+![Rey Demo](Rey-Demo-Image.png)
+
 ---
 
 ## Inspiration
@@ -97,4 +99,4 @@ rey/
 
 ---
 
-*In memory of Rey* 🐾
+*In memory of Rey — good girl forever.* 🐾
