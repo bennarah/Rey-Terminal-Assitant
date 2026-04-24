@@ -8,6 +8,8 @@ Rey is a desktop AI assistant for macOS that lives above your dock as an animate
 
 This project is dedicated to my late golden retriever, Rey — the sweetest, most loyal dog. She now lives on my dock, ready to help whenever I need her. 🐾
 
+The idea for a character that walks across the dock was inspired by [lil agents](https://github.com/ryanstephen/lil-agents) by [@ryanstephen](https://github.com/ryanstephen) — a beautifully crafted macOS app built in Swift. I loved the concept so much that I reimagined it from scratch in Python, building my own transparent window system, sprite animation, and AI integration.
+
 ---
 
 ## Who is Rey for?
