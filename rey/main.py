@@ -8,7 +8,7 @@ from PySide6.QtWidgets import (
     QLineEdit, QTextEdit, QPushButton, QLabel
 )
 from PySide6.QtCore import Qt, QTimer, QEvent, QPoint, QThread, Signal
-from PySide6.QtGui import QPainter, QColor, QPen, QBrush, QFont
+from PySide6.QtGui import QPainter, QColor, QPen, QBrush, QFont, QPixmap, QTransform
 
 load_dotenv()
 
@@ -76,9 +76,9 @@ class ChatPopup(QWidget):
         card.setObjectName("card")
         card.setStyleSheet("""
             QWidget#card {
-                background-color: #1e1e2e;
+                background-color: #fff5e6;
                 border-radius: 16px;
-                border: 1.5px solid #444466;
+                border: 2px solid #f4a0b5;
             }
         """)
         outer.addWidget(card)
@@ -90,15 +90,15 @@ class ChatPopup(QWidget):
         # --- Title bar ---
         title_row = QHBoxLayout()
         title = QLabel("Rey 🐾")
-        title.setStyleSheet("color: #f0c060; font-weight: bold; font-size: 14px;")
+        title.setStyleSheet("color: #c47c2b; font-weight: bold; font-size: 14px;")
         close_btn = QPushButton("✕")
         close_btn.setFixedSize(22, 22)
         close_btn.setStyleSheet("""
             QPushButton {
-                background: #444466; color: #aaaacc;
+                background: #f4a0b5; color: white;
                 border: none; border-radius: 11px; font-size: 11px;
             }
-            QPushButton:hover { background: #cc4455; color: white; }
+            QPushButton:hover { background: #e0607a; color: white; }
         """)
         close_btn.clicked.connect(self.close)
         title_row.addWidget(title)
@@ -111,9 +111,9 @@ class ChatPopup(QWidget):
         self.chat_display.setReadOnly(True)
         self.chat_display.setStyleSheet("""
             QTextEdit {
-                background-color: #13131f;
-                color: #e0e0f0;
-                border: none;
+                background-color: #fff9f0;
+                color: #5a3e28;
+                border: 1.5px solid #f4c8d0;
                 border-radius: 10px;
                 padding: 8px;
                 font-size: 12px;
@@ -129,14 +129,14 @@ class ChatPopup(QWidget):
         self.input_field.setPlaceholderText("e.g. how do I clone a repo?")
         self.input_field.setStyleSheet("""
             QLineEdit {
-                background-color: #13131f;
-                color: #e0e0f0;
-                border: 1.5px solid #444466;
+                background-color: #fff9f0;
+                color: #5a3e28;
+                border: 1.5px solid #f4c8d0;
                 border-radius: 10px;
                 padding: 6px 10px;
                 font-size: 12px;
             }
-            QLineEdit:focus { border: 1.5px solid #f0c060; }
+            QLineEdit:focus { border: 1.5px solid #e8a020; }
         """)
         self.input_field.returnPressed.connect(self.send_message)
 
@@ -144,16 +144,16 @@ class ChatPopup(QWidget):
         self.send_btn.setFixedWidth(50)
         self.send_btn.setStyleSheet("""
             QPushButton {
-                background-color: #f0c060;
-                color: #1e1e2e;
+                background-color: #f4a0b5;
+                color: white;
                 border: none;
                 border-radius: 10px;
                 font-weight: bold;
                 font-size: 12px;
                 padding: 6px;
             }
-            QPushButton:hover { background-color: #ffd880; }
-            QPushButton:disabled { background-color: #555555; color: #999999; }
+            QPushButton:hover { background-color: #e8829a; }
+            QPushButton:disabled { background-color: #ddc8c8; color: #aaaaaa; }
         """)
         self.send_btn.clicked.connect(self.send_message)
 
@@ -231,9 +231,9 @@ class ReyWindow(QWidget):
         self.screen_width = screen.width()
         self.screen_height = screen.height()
 
-        self.rey_width = 64
-        self.rey_height = 64
-        self.dock_height = 40
+        self.rey_width = 160
+        self.rey_height = 160
+        self.dock_height = 0
 
         win_height = self.rey_height + 20
         self.setGeometry(
@@ -248,6 +248,25 @@ class ReyWindow(QWidget):
         self.speed = 1
         self.chat_popup = None
 
+        # --- Load sprite sheet and slice into frames ---
+        sheet = QPixmap(os.path.join(os.path.dirname(__file__), "New Piskel.png"))
+        frame_w, frame_h, cols = 64, 64, 2
+        display_size = 160  # increase this to make Rey bigger
+        self.frames = []
+        for i in range(5):
+            row, col = divmod(i, cols)
+            frame = sheet.copy(col * frame_w, row * frame_h, frame_w, frame_h)
+            frame = frame.scaled(
+                display_size, display_size,
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.FastTransformation  # keeps pixel art crisp
+            )
+            self.frames.append(frame)
+
+        self.current_frame = 0
+        self.frame_timer = 0
+        self.frames_per_step = 8  # advance one frame every 8 ticks (~7.5fps)
+
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_position)
         self.timer.start(16)
@@ -260,27 +279,26 @@ class ReyWindow(QWidget):
             self.direction = -1
         elif self.rey_x <= 0:
             self.direction = 1
+
+        # Advance animation frame
+        self.frame_timer += 1
+        if self.frame_timer >= self.frames_per_step:
+            self.frame_timer = 0
+            self.current_frame = (self.current_frame + 1) % len(self.frames)
+
         self.update()
 
     def paintEvent(self, event):
         painter = QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
 
-        painter.setBrush(QBrush(QColor(220, 160, 60)))
-        painter.setPen(QPen(QColor(180, 120, 30), 2))
-        painter.drawRoundedRect(
-            int(self.rey_x), 10,
-            self.rey_width, self.rey_height,
-            10, 10
-        )
+        frame = self.frames[self.current_frame]
 
-        painter.setPen(QPen(QColor(255, 255, 255)))
-        painter.drawText(
-            int(self.rey_x), 10,
-            self.rey_width, self.rey_height,
-            Qt.AlignmentFlag.AlignCenter,
-            "Rey 🐾"
-        )
+        # Flip horizontally when walking left
+        if self.direction == -1:
+            frame = frame.transformed(QTransform().scale(-1, 1))
+
+        painter.drawPixmap(int(self.rey_x), 10, frame)
 
     def changeEvent(self, event):
         if event.type() == QEvent.Type.WindowStateChange:
